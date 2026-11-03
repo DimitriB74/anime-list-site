@@ -1,4 +1,6 @@
 // Interface de la liste d'animés. Aucune dépendance : DOM natif, textContent partout (pas d'innerHTML).
+import { appliquerOps, champsDepuisMedia, idOperation } from './journal.js';
+import * as mobile from './mobile.js';
 
 const STATUTS = {
   vu: { libelle: 'Vu', couleur: 'var(--st-vu)' },
@@ -33,6 +35,10 @@ const etat = {
   animes: [],
   admin: false,
   adminDispo: false,
+  statique: false, // site publié sur GitHub Pages : pas de serveur, édition par journal GitHub
+  base: [], // animes.json tel que publié (mode statique)
+  opsDistantes: [], // journal déjà envoyé sur GitHub, pas encore rejoué sur le PC
+  synchro: { envoi: false, erreur: '' },
   onglet: 'collection',
   vue: stockage.lire('vue', 'grille'),
   f: { q: '', statut: 'tous', type: '', tag: '', periode: '', genre: '' },
@@ -42,6 +48,7 @@ const etat = {
 // ---------- Réseau ----------
 
 async function api(url, options = {}) {
+  if (etat.statique && url.startsWith('/api/')) return apiMobile(url, options);
   const r = await fetch(url, {
     ...options,
     headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
@@ -51,6 +58,79 @@ async function api(url, options = {}) {
   const donnees = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(donnees.erreur || `Erreur ${r.status}`);
   return donnees;
+}
+
+// ---------- Édition sans serveur (site GitHub Pages sur téléphone) ----------
+// Les mêmes appels /api/... que sur le PC sont traduits en opérations du journal (voir journal.js).
+
+const opsActives = () => [...etat.opsDistantes, ...mobile.file.lire()];
+const recalculer = () => { etat.animes = appliquerOps(etat.base, opsActives()); };
+
+function majPied() {
+  const info = $('#pied-info');
+  if (!etat.admin) { info.textContent = 'Lecture seule.'; return; }
+  if (!etat.statique) { info.textContent = 'Mode édition : clique sur une fiche pour la modifier.'; return; }
+  const n = mobile.file.lire().length;
+  const etatEnvoi = etat.synchro.envoi ? 'envoi à GitHub…'
+    : n > 0 ? `${n} modification${n > 1 ? 's' : ''} pas encore envoyée${n > 1 ? 's' : ''}` : 'tout est envoyé à GitHub';
+  info.replaceChildren(...[
+    `Édition sur téléphone : ${etatEnvoi}`,
+    etat.synchro.erreur ? h('span', { class: 'erreur' }, ` (${etat.synchro.erreur})`) : null,
+    n > 0 && !etat.synchro.envoi ? ' ' : null,
+    n > 0 && !etat.synchro.envoi ? h('button', { type: 'button', class: 'discret', onclick: envoyer }, 'Réessayer') : null,
+  ].filter(Boolean));
+}
+
+async function envoyer() {
+  if (etat.synchro.envoi || !mobile.file.lire().length) { majPied(); return; }
+  etat.synchro = { envoi: true, erreur: '' };
+  majPied();
+  try {
+    const r = await mobile.envoyerFile();
+    if (r.journal) etat.opsDistantes = r.journal;
+  } catch (e) {
+    etat.synchro.erreur = e.message;
+  }
+  etat.synchro.envoi = false;
+  majPied();
+  if (!etat.synchro.erreur && mobile.file.lire().length) envoyer(); // ajoutées pendant l'envoi
+}
+
+async function enregistrerOp(op) {
+  mobile.file.ajouter({ id: idOperation(), le: new Date().toISOString(), ...op });
+  recalculer();
+  envoyer(); // sans attendre : la modification est déjà visible, l'envoi se fait en arrière-plan
+}
+
+async function apiMobile(url, { method = 'GET', body } = {}) {
+  if (!mobile.jeton()) throw new Error("L'édition n'est pas activée sur ce téléphone.");
+  const u = new URL(url, location.href);
+  const trouve = (id) => etat.animes.find((a) => a.id === id);
+  if (u.pathname === '/api/anilist/recherche') {
+    const q = (u.searchParams.get('q') || '').trim().slice(0, 100);
+    return q.length < 2 ? [] : mobile.chercherAnilist(q);
+  }
+  if (method === 'POST' && u.pathname === '/api/animes') {
+    let corps = { ...body };
+    if (corps.anilist_id) corps = { ...champsDepuisMedia(await mobile.detailAnilist(corps.anilist_id), corps), ...corps };
+    const cid = Date.now();
+    await enregistrerOp({ op: 'ajout', cid, corps });
+    return trouve(-cid);
+  }
+  const m = u.pathname.match(/^\/api\/animes\/(-?\d+)(\/associer)?$/);
+  if (m) {
+    const cible = Number(m[1]);
+    const a = trouve(cible);
+    if (!a) throw new Error('Anime introuvable.');
+    if (method === 'PUT' && !m[2]) { await enregistrerOp({ op: 'maj', cible, corps: body }); return trouve(cible); }
+    if (method === 'DELETE' && !m[2]) { await enregistrerOp({ op: 'suppr', cible }); return null; }
+    if (method === 'POST' && m[2]) {
+      const media = await mobile.detailAnilist(body?.anilist_id);
+      await enregistrerOp({ op: 'maj', cible, corps: champsDepuisMedia(media, a) });
+      return trouve(cible);
+    }
+  }
+  throw new Error('Action indisponible sur téléphone.');
 }
 
 let minuterieToast;
@@ -482,8 +562,7 @@ function configurerAjout() {
   const creer = async (corps) => {
     try {
       const a = await api('/api/animes', { method: 'POST', body: { statut: $('#ajout-statut').value, ...corps } });
-      etat.animes.push(a);
-      rafraichirApresChangement();
+      remplacerLocal(a);
       toast(`« ${a.titre} » ajouté`);
       dlg.close();
       ouvrirDetail(a.id);
@@ -511,9 +590,9 @@ function configurerAjout() {
 function majSession() {
   $('#btn-ajouter').hidden = !etat.admin;
   const b = $('#btn-connexion');
-  b.textContent = etat.admin ? 'Se déconnecter' : 'Se connecter';
+  b.textContent = etat.statique ? (etat.admin ? "Désactiver l'édition" : "Activer l'édition") : (etat.admin ? 'Se déconnecter' : 'Se connecter');
   b.hidden = !etat.admin && !etat.adminDispo;
-  $('#pied-info').textContent = etat.admin ? 'Mode édition : clique sur une fiche pour la modifier.' : 'Lecture seule.';
+  majPied();
   rendreFiltres();
   rendreCollection();
 }
@@ -522,11 +601,23 @@ function configurerConnexion() {
   const dlg = $('#dlg-connexion');
   $('#btn-connexion').addEventListener('click', async () => {
     if (etat.admin) {
-      await api('/api/logout', { method: 'POST' });
+      const attente = mobile.file.lire().length;
+      if (etat.statique) {
+        if (attente && !confirm(`${attente} modification(s) ne sont pas encore envoyées à GitHub. Désactiver quand même l'édition ?`)) return;
+        mobile.desactiver();
+      } else await api('/api/logout', { method: 'POST' });
       etat.admin = false;
       majSession();
-      toast('Déconnecté');
+      toast(etat.statique ? 'Édition désactivée sur ce téléphone' : 'Déconnecté');
     } else {
+      const jeton = etat.statique;
+      $('#titre-connexion').textContent = jeton ? "Activer l'édition sur ce téléphone" : 'Connexion administrateur';
+      $('#texte-connexion').textContent = jeton
+        ? "Crée sur GitHub un jeton limité à ce seul dépôt (permission « Contents : Read and write »), puis colle-le ici. Il reste uniquement dans ce navigateur."
+        : 'Seule la personne qui tient la liste peut la modifier.';
+      $('#lien-jeton').hidden = $('#lien-jeton').parentElement.hidden = !jeton;
+      $('#libelle-mdp').textContent = jeton ? 'Jeton GitHub' : 'Mot de passe';
+      $('#btn-valider-connexion').textContent = jeton ? 'Activer' : 'Se connecter';
       $('#erreur-connexion').textContent = '';
       $('#motdepasse').value = '';
       dlg.showModal();
@@ -536,11 +627,21 @@ function configurerConnexion() {
   $('#form-connexion').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
-      await api('/api/login', { method: 'POST', body: { motdepasse: $('#motdepasse').value } });
-      etat.admin = true;
-      dlg.close();
-      majSession();
-      toast('Connecté : tu peux modifier la liste');
+      if (etat.statique) {
+        await mobile.activer($('#motdepasse').value);
+        etat.admin = true;
+        $('#motdepasse').value = '';
+        dlg.close();
+        majSession();
+        toast("Édition activée : les ajouts partent sur GitHub");
+        synchroniserAuDemarrage();
+      } else {
+        await api('/api/login', { method: 'POST', body: { motdepasse: $('#motdepasse').value } });
+        etat.admin = true;
+        dlg.close();
+        majSession();
+        toast('Connecté : tu peux modifier la liste');
+      }
     } catch (err) { $('#erreur-connexion').textContent = err.message; }
   });
 }
@@ -602,6 +703,18 @@ function init() {
   configurerAjout();
 }
 
+// Journal déjà envoyé sur GitHub (ajouts faits depuis un autre appareil ou avant un rechargement).
+async function synchroniserAuDemarrage() {
+  try {
+    etat.opsDistantes = await mobile.chargerJournal();
+    recalculer();
+    rafraichirApresChangement();
+  } catch (e) {
+    toast(`Journal GitHub indisponible : ${e.message}`, true);
+  }
+  envoyer();
+}
+
 async function demarrer() {
   init();
   try {
@@ -611,12 +724,16 @@ async function demarrer() {
       etat.adminDispo = session.adminDispo;
       etat.animes = animes;
     } catch {
-      // Pas de serveur (site publié sur GitHub Pages) : lecture seule depuis animes.json, chemin relatif.
-      etat.animes = await api('animes.json');
-      etat.admin = false;
-      etat.adminDispo = false;
-      const lien = $('.pied a');
-      lien.href = 'animes.json';
+      // Pas de serveur (site publié sur GitHub Pages) : animes.json, chemin relatif ; édition possible
+      // depuis un téléphone qui a un jeton GitHub (journal modifications.json).
+      etat.statique = true;
+      etat.base = await api('animes.json', { cache: 'no-cache' });
+      etat.adminDispo = !!mobile.depot();
+      etat.admin = etat.adminDispo && !!mobile.jeton();
+      recalculer(); // la file locale (modifications pas encore envoyées) reste visible
+      $('.pied a').href = 'animes.json';
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+      addEventListener('online', envoyer);
     }
     indexer();
   } catch (e) {
@@ -624,6 +741,7 @@ async function demarrer() {
     return;
   }
   majSession();
+  if (etat.statique && etat.admin) synchroniserAuDemarrage();
 }
 
 demarrer();

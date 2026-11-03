@@ -6,6 +6,13 @@
   <title>Ma liste d'animés</title>
   <meta name="description" content="Les animés que j'ai vus, que je regarde et que je veux voir, avec mes notes.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c5cff'/%3E%3Cpath d='M32 12l6 14h15l-12 9 5 15-14-9-14 9 5-15-12-9h15z' fill='%23fff'/%3E%3C/svg%3E">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://*.anilist.co data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://graphql.anilist.co https://api.github.com; base-uri 'none'; form-action 'self'">
+  <meta name="theme-color" content="#7c5cff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Animés">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -67,14 +74,15 @@
   <dialog id="dlg-connexion" aria-labelledby="titre-connexion">
     <form method="dialog" id="form-connexion" class="dlg-corps petit">
       <h2 id="titre-connexion">Connexion administrateur</h2>
-      <p class="muted">Seule la personne qui tient la liste peut la modifier.</p>
-      <label>Mot de passe
-        <input type="password" id="motdepasse" autocomplete="current-password" required>
+      <p class="muted" id="texte-connexion">Seule la personne qui tient la liste peut la modifier.</p>
+      <p class="muted"><a id="lien-jeton" hidden href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Créer un jeton sur GitHub</a></p>
+      <label><span id="libelle-mdp">Mot de passe</span>
+        <input type="password" id="motdepasse" autocomplete="off" required>
       </label>
       <p class="erreur" id="erreur-connexion" role="alert"></p>
       <div class="rangee">
         <button type="button" class="discret" data-fermer>Annuler</button>
-        <button type="submit" class="primaire">Se connecter</button>
+        <button type="submit" class="primaire" id="btn-valider-connexion">Se connecter</button>
       </div>
     </form>
   </dialog>
