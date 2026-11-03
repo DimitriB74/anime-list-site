@@ -1,6 +1,7 @@
 // Interface de la liste d'animés. Aucune dépendance : DOM natif, textContent partout (pas d'innerHTML).
 import { appliquerOps, champsDepuisMedia, idOperation } from './journal.js';
 import * as mobile from './mobile.js';
+import { construireCsv, nomFichierCsv } from './csv.js';
 
 const STATUTS = {
   vu: { libelle: 'Vu', couleur: 'var(--st-vu)' },
@@ -773,6 +774,21 @@ function configurerConnexion() {
   });
 }
 
+// ---------- Export CSV ----------
+
+// Toute la liste telle qu'affichée (modifications du téléphone non encore envoyées comprises), tous types confondus.
+function exporterCsv() {
+  const nom = nomFichierCsv();
+  const contenu = construireCsv(etat.animes, { categories: CATEGORIES, types: TYPES, statuts: Object.keys(STATUTS), categorieDe, libelleStatut });
+  const url = URL.createObjectURL(new Blob([contenu], { type: 'text/csv;charset=utf-8' }));
+  const lien = h('a', { href: url, download: nom });
+  document.body.append(lien);
+  lien.click();
+  lien.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  toast(`${etat.animes.length} entrées exportées dans ${nom}`);
+}
+
 // ---------- Démarrage ----------
 
 function appliquerTheme(theme) {
@@ -780,6 +796,7 @@ function appliquerTheme(theme) {
 }
 
 function init() {
+  $('#btn-csv').addEventListener('click', exporterCsv);
   appliquerTheme(stockage.lire('theme', ''));
   $('#btn-theme').addEventListener('click', () => {
     const sombre = matchMedia('(prefers-color-scheme: dark)').matches;
