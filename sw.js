@@ -1,7 +1,7 @@
 // Service worker : l'application s'ouvre même sans réseau.
 // __VERSION__ est remplacé à la publication (scripts/publier.js) par une empreinte du contenu :
 // une nouvelle version du site = un nouveau cache, l'ancien est supprimé.
-const VERSION = 'befa6d3c6c1e';
+const VERSION = 'bcdf8182af98';
 const COQUILLE = [
   './', 'index.html', 'style.css', 'app.js', 'journal.js', 'mobile.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',

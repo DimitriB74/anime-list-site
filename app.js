@@ -839,6 +839,27 @@ async function synchroniserAuDemarrage() {
   envoyer();
 }
 
+// Mise à jour automatique de l'application installée : le service worker sert l'ancienne version depuis son cache,
+// donc sans ceci une nouvelle version n'apparaît qu'à la 2e ouverture. Ici : on cherche une nouvelle version à
+// chaque retour au premier plan, et quand elle prend la main la page se recharge (sauf fiche ouverte).
+function surveillerMiseAJour() {
+  if (!('serviceWorker' in navigator)) return;
+  const etaitPilotee = !!navigator.serviceWorker.controller; // 1re installation : rien à recharger
+  let rechargee = false;
+  const recharger = () => {
+    if (document.querySelector('dialog[open]')) return void setTimeout(recharger, 3000);
+    location.reload();
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!etaitPilotee || rechargee) return;
+    rechargee = true;
+    recharger();
+  });
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+  }).catch(() => {});
+}
+
 async function demarrer() {
   init();
   try {
@@ -856,7 +877,7 @@ async function demarrer() {
       etat.admin = etat.adminDispo && !!mobile.jeton();
       recalculer(); // la file locale (modifications pas encore envoyées) reste visible
       $('.pied a').href = 'animes.json';
-      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+      surveillerMiseAJour();
       addEventListener('online', envoyer);
     }
     indexer();
