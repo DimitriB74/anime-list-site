@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ma liste d'animés</title>
+  <meta name="description" content="Les animés que j'ai vus, que je regarde et que je veux voir, avec mes notes.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c5cff'/%3E%3Cpath d='M32 12l6 14h15l-12 9 5 15-14-9-14 9 5-15-12-9h15z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="entete">
+    <div class="marque">
+      <span class="logo" aria-hidden="true">★</span>
+      <h1>Ma liste d'animés</h1>
+    </div>
+    <nav class="onglets" aria-label="Sections">
+      <button type="button" data-onglet="collection" aria-pressed="true">Collection</button>
+      <button type="button" data-onglet="stats" aria-pressed="false">Statistiques</button>
+    </nav>
+    <div class="actions">
+      <button type="button" id="btn-ajouter" class="primaire" hidden>+ Ajouter</button>
+      <button type="button" id="btn-connexion" class="discret">Se connecter</button>
+      <button type="button" id="btn-theme" class="discret icone" aria-label="Changer de thème" title="Thème clair / sombre">◐</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="vue-collection" aria-label="Collection">
+      <div class="barre">
+        <input type="search" id="recherche" placeholder="Rechercher un titre, une étiquette, un commentaire…" aria-label="Rechercher" autocomplete="off">
+        <select id="tri" aria-label="Trier par">
+          <option value="ordre">Ordre de ma liste</option>
+          <option value="titre">Titre A → Z</option>
+          <option value="note_desc">Meilleures notes</option>
+          <option value="note_asc">Notes les plus basses</option>
+          <option value="annee_desc">Année de sortie</option>
+          <option value="recent">Modifiés récemment</option>
+          <option value="progression">Progression</option>
+        </select>
+        <div class="bascule" role="group" aria-label="Affichage">
+          <button type="button" id="vue-grille" aria-pressed="true" title="Grille d'affiches">▦</button>
+          <button type="button" id="vue-liste" aria-pressed="false" title="Liste">☰</button>
+        </div>
+      </div>
+      <div class="pastilles" id="pastilles" role="group" aria-label="Filtrer par statut"></div>
+      <div class="filtres">
+        <select id="f-tag" aria-label="Étiquette"></select>
+        <select id="f-periode" aria-label="Période"></select>
+        <select id="f-genre" aria-label="Genre"></select>
+        <button type="button" id="f-reset" class="discret">Réinitialiser</button>
+      </div>
+      <p id="compteur" class="compteur" aria-live="polite"></p>
+      <div id="liste" class="grille"></div>
+    </section>
+
+    <section id="vue-stats" hidden aria-label="Statistiques"></section>
+  </main>
+
+  <footer class="pied">
+    <span id="pied-info"></span>
+    <a href="/api/export" download="animes.json">Télécharger la liste (JSON)</a>
+  </footer>
+
+  <dialog id="dlg-detail" aria-label="Fiche"></dialog>
+
+  <dialog id="dlg-connexion" aria-labelledby="titre-connexion">
+    <form method="dialog" id="form-connexion" class="dlg-corps petit">
+      <h2 id="titre-connexion">Connexion administrateur</h2>
+      <p class="muted">Seule la personne qui tient la liste peut la modifier.</p>
+      <label>Mot de passe
+        <input type="password" id="motdepasse" autocomplete="current-password" required>
+      </label>
+      <p class="erreur" id="erreur-connexion" role="alert"></p>
+      <div class="rangee">
+        <button type="button" class="discret" data-fermer>Annuler</button>
+        <button type="submit" class="primaire">Se connecter</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-ajout" aria-labelledby="titre-ajout">
+    <div class="dlg-corps">
+      <h2 id="titre-ajout">Ajouter un animé</h2>
+      <form id="form-recherche" class="rangee">
+        <input type="search" id="ajout-q" placeholder="Titre à chercher (romaji, anglais…)" aria-label="Titre à chercher" autocomplete="off" required>
+        <select id="ajout-statut" aria-label="Statut de départ">
+          <option value="a_voir">À voir</option>
+          <option value="en_cours">En cours</option>
+          <option value="vu">Vu</option>
+        </select>
+        <button type="submit" class="primaire">Chercher</button>
+      </form>
+      <div id="ajout-resultats" class="resultats" aria-live="polite"></div>
+      <div class="rangee">
+        <button type="button" id="ajout-manuel" class="discret">Ajouter sans fiche (saisie manuelle)</button>
+        <button type="button" class="discret" data-fermer>Fermer</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
