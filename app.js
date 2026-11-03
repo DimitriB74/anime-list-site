@@ -8,24 +8,26 @@ const STATUTS = {
   a_voir: { libelle: 'À voir', couleur: 'var(--st-a_voir)' },
   abandonne: { libelle: 'Abandonné', couleur: 'var(--st-abandonne)' },
 };
-const TYPES = { serie: 'Animé', film: "Film d'animation", cinema: 'Film', livre: 'Livre', manga: 'Manga', manhwa: 'Manhwa' };
+const TYPES = { serie: 'Animé', film: "Film d'animation", cinema: 'Film', serietv: 'Série', livre: 'Livre', manga: 'Manga', manhwa: 'Manhwa' };
+const estSerie = (type) => type === 'serie' || type === 'serietv'; // des épisodes plutôt qu'une durée
 const TYPES_COURT = { film: 'Film anim.' }; // pastille sur l'affiche
 // Trois grandes catégories. `statuts` : ceux qui ont un sens dans la catégorie ; `defaut` : statut affiché d'abord.
 const CATEGORIES = {
   anime: { libelle: 'Animé', types: ['serie', 'film'], statuts: ['vu', 'en_cours', 'a_voir', 'abandonne'], defaut: 'vu', recherche: 'anime' },
   lecture: { libelle: 'Lecture', types: ['livre', 'manga', 'manhwa'], statuts: ['vu', 'a_voir'], defaut: '', recherche: 'manga' },
-  film: { libelle: 'Film', types: ['cinema'], statuts: ['vu', 'a_voir'], defaut: 'vu', recherche: null },
+  film: { libelle: 'Film', types: ['cinema', 'serietv'], statuts: ['vu', 'a_voir'], defaut: 'vu', recherche: null },
 };
 const categorieDe = (type) => Object.keys(CATEGORIES).find((c) => CATEGORIES[c].types.includes(type)) ?? 'anime';
 // « Vu » devient « Lu » pour une lecture ; « À voir » devient « À lire ».
 const LIBELLES_LECTURE = { vu: 'Lu', a_voir: 'À lire' };
 const libelleStatut = (type, statut) => (categorieDe(type) === 'lecture' && LIBELLES_LECTURE[statut]) || STATUTS[statut].libelle;
 const MIN_PAR_EPISODE = 24; // hypothèse pour l'estimation des heures (affichée comme telle)
+const MIN_PAR_EPISODE_TV = 50; // série en prises de vues réelles (valeur donnée dans ta liste : « épisode = 50 min »)
 
 // 112 -> « 1 h 52 » ; 45 -> « 45 min »
 const formaterDuree = (min) => (min >= 60 ? `${Math.floor(min / 60)} h${String(min % 60).padStart(2, '0')}` : `${min} min`);
 // Année du premier visionnage (champ « periode » : « 2021 », « Avant 2020 »).
-const texteAnnee = (a) => (a.periode && a.statut !== 'a_voir' ? (/^\d{4}$/.test(a.periode) ? `Vu en ${a.periode}` : `Vu ${a.periode.toLowerCase()}`) : null);
+const texteAnnee = (a) => (a.periode && a.statut !== 'a_voir' ? (/^\d{4}(-\d{4})?$/.test(a.periode) ? `Vu en ${a.periode}` : `Vu ${a.periode.toLowerCase()}`) : null);
 
 const $ = (s, r = document) => r.querySelector(s);
 const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -239,7 +241,7 @@ function progression(a) {
 // Menu de statut directement sur la carte (admin) : un clic, une modification enregistrée.
 async function changerStatut(a, statut) {
   const corps = { statut };
-  if (statut === 'vu' && a.type === 'serie' && a.episodes_total) corps.episodes_vus = a.episodes_total;
+  if (statut === 'vu' && estSerie(a.type) && a.episodes_total) corps.episodes_vus = a.episodes_total;
   try {
     remplacerLocal(await api(`/api/animes/${a.id}`, { method: 'PUT', body: corps }));
     toast(`« ${a.titre} » : ${libelleStatut(a.type, statut)}`);
@@ -446,11 +448,13 @@ function rendreStats() {
   const minutesFilms = films.reduce((s, a) => s + (a.duree ?? 0) * a.visionnages, 0);
   const filmsSansDuree = films.filter((a) => !a.duree).length;
   // Épisodes regardés, revisionnages compris (24/24 vu deux fois = 48).
-  const episodes = A.reduce((s, a) => {
-    if (a.statut === 'a_voir' || a.type !== 'serie') return s;
+  const episodesDe = (type) => A.reduce((s, a) => {
+    if (a.statut === 'a_voir' || a.type !== type) return s;
     const vus = a.episodes_vus ?? (a.statut === 'vu' ? a.episodes_total ?? 0 : 0);
     return s + vus * (a.statut === 'vu' ? a.visionnages : 1);
   }, 0);
+  const episodes = episodesDe('serie');
+  const episodesTv = episodesDe('serietv'); // séries en prises de vues réelles : épisodes d'environ 50 min
   const revus = A.filter((a) => a.statut === 'vu' && a.visionnages > 1).length;
   const notes = A.filter((a) => a.note != null);
   const moyenne = notes.length ? notes.reduce((s, a) => s + a.note, 0) / notes.length : null;
@@ -471,13 +475,14 @@ function rendreStats() {
       tuile(A.length, 'entrées au total'),
       tuile(vus.length, 'terminés'),
       tuile(episodes.toLocaleString('fr-FR'), `épisodes vus, revisionnages compris (${revus} animé${revus > 1 ? 's' : ''} vu${revus > 1 ? 's' : ''} plusieurs fois)`),
-      tuile(`≈ ${Math.round((episodes * MIN_PAR_EPISODE + minutesFilms) / 60).toLocaleString('fr-FR')} h`,
-        `de visionnage (épisodes estimés à ${MIN_PAR_EPISODE} min, films à leur durée${filmsSansDuree ? `, ${filmsSansDuree} film${filmsSansDuree > 1 ? 's' : ''} sans durée non compté${filmsSansDuree > 1 ? 's' : ''}` : ''})`),
+      tuile(`≈ ${Math.round((episodes * MIN_PAR_EPISODE + episodesTv * MIN_PAR_EPISODE_TV + minutesFilms) / 60).toLocaleString('fr-FR')} h`,
+        `de visionnage (épisodes estimés à ${MIN_PAR_EPISODE} min, ${MIN_PAR_EPISODE_TV} min pour les séries, films à leur durée${filmsSansDuree ? `, ${filmsSansDuree} film${filmsSansDuree > 1 ? 's' : ''} sans durée non compté${filmsSansDuree > 1 ? 's' : ''}` : ''})`),
       tuile(moyenne == null ? '–' : `${moyenne.toFixed(2).replace('.', ',')} ★`, `note moyenne (${notes.length} notes, dont ${estimees} estimées)`),
       tuile(nbType('serie'), 'animés (séries)'),
       tuile(nbType('film'), "films d'animation"),
       tuile(nbType('livre', 'manga', 'manhwa'), 'lectures'),
       tuile(nbType('cinema'), 'films'),
+      tuile(nbType('serietv'), 'séries'),
     ),
     h('div', { class: 'panneaux' },
       barres('Par statut', Object.entries(STATUTS).map(([k, v]) => ({ label: v.libelle, valeur: A.filter((a) => a.statut === k).length, couleur: v.couleur })), { total: A.length }),
@@ -575,7 +580,7 @@ function ficheEdition(a) {
       tags: iTags.value.split(',').map((t) => t.trim()).filter(Boolean), commentaire: iCom.value,
       affiche: iAffiche.value || null,
     };
-    if (corps.statut === 'vu' && corps.episodes_total && corps.episodes_vus == null && corps.type === 'serie') corps.episodes_vus = corps.episodes_total;
+    if (corps.statut === 'vu' && corps.episodes_total && corps.episodes_vus == null && estSerie(corps.type)) corps.episodes_vus = corps.episodes_total;
     if (noteChangee) corps.note = b.note;
     try {
       remplacerLocal(await api(`/api/animes/${a.id}`, { method: 'PUT', body: corps }));
@@ -622,7 +627,7 @@ function ficheEdition(a) {
     const statut = iStatut.value;
     iStatut.replaceChildren(...optionsStatut(type, statut));
     iStatut.value = [...iStatut.options].some((o) => o.value === statut) ? statut : iStatut.options[0].value;
-    for (const l of grille.querySelectorAll('.ch-serie')) l.hidden = type !== 'serie';
+    for (const l of grille.querySelectorAll('.ch-serie')) l.hidden = !estSerie(type);
     for (const l of grille.querySelectorAll('.ch-film')) l.hidden = type !== 'film' && type !== 'cinema';
     for (const l of grille.querySelectorAll('.ch-vu')) l.hidden = categorieDe(type) === 'lecture';
   };
