@@ -259,6 +259,10 @@ label input, label select, label textarea { color: var(--text); font-size: .95re
   .fiche .affiche { max-width: 170px; }
   .barre-stat { grid-template-columns: 90px 1fr 36px; }
 }
+@media (max-width: 440px) {
+  .onglets { gap: 2px; }
+  .onglets button { padding: 8px 6px; font-size: .82rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }

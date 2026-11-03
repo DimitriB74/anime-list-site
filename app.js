@@ -15,7 +15,7 @@ const TYPES_COURT = { film: 'Film anim.' }; // pastille sur l'affiche
 const CATEGORIES = {
   anime: { libelle: 'Animé', types: ['serie', 'film'], statuts: ['vu', 'en_cours', 'a_voir', 'abandonne'], defaut: 'vu', recherche: 'anime' },
   lecture: { libelle: 'Lecture', types: ['livre', 'manga', 'manhwa'], statuts: ['vu', 'a_voir'], defaut: '', recherche: 'manga' },
-  film: { libelle: 'Film', types: ['cinema', 'serietv'], statuts: ['vu', 'a_voir'], defaut: 'vu', recherche: null },
+  film: { libelle: 'Film/Séries', types: ['cinema', 'serietv'], statuts: ['vu', 'a_voir'], defaut: 'vu', recherche: null },
 };
 const categorieDe = (type) => Object.keys(CATEGORIES).find((c) => CATEGORIES[c].types.includes(type)) ?? 'anime';
 // « Vu » devient « Lu » pour une lecture ; « À voir » devient « À lire ».
