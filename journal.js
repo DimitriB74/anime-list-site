@@ -13,7 +13,7 @@ export const FICHIER_JOURNAL = 'modifications.json';
 const DEFAUTS = {
   titre_officiel: null, type: 'serie', statut: 'a_voir', episodes_vus: null, episodes_total: null,
   note: null, note_estimee: false, commentaire: '', tags: [], periode: null, affiche: null,
-  synopsis: null, genres: [], annee: null, anilist_id: null, visionnages: 1,
+  synopsis: null, genres: [], annee: null, anilist_id: null, visionnages: 1, duree: null,
 };
 
 export const idOperation = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -58,6 +58,8 @@ export function champsDepuisMedia(media, existant = {}) {
     genres: media.genres,
     annee: media.annee ?? null,
     anilist_id: media.id,
-    episodes_total: existant.episodes_total ?? media.episodes ?? null,
+    // Épisodes pour une série ; durée en minutes pour un film (jamais la durée d'un épisode).
+    ...(media.format === 'MOVIE' ? { duree: existant.duree ?? media.duree ?? null }
+      : ['MANGA', 'NOVEL', 'ONE_SHOT'].includes(media.format) ? {} : { episodes_total: existant.episodes_total ?? media.episodes ?? null }),
   };
 }

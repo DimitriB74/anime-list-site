@@ -6,7 +6,7 @@
   <title>Ma liste d'animés</title>
   <meta name="description" content="Les animés que j'ai vus, que je regarde et que je veux voir, avec mes notes.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c5cff'/%3E%3Cpath d='M32 12l6 14h15l-12 9 5 15-14-9-14 9 5-15-12-9h15z' fill='%23fff'/%3E%3C/svg%3E">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://*.anilist.co data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://graphql.anilist.co https://api.github.com; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://*.anilist.co https://upload.wikimedia.org data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://graphql.anilist.co https://api.github.com; base-uri 'none'; form-action 'self'">
   <meta name="theme-color" content="#7c5cff">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,8 +21,10 @@
       <span class="logo" aria-hidden="true">★</span>
       <h1>Ma liste d'animés</h1>
     </div>
-    <nav class="onglets" aria-label="Sections">
-      <button type="button" data-onglet="collection" aria-pressed="true">Collection</button>
+    <nav class="onglets" aria-label="Catégories">
+      <button type="button" data-onglet="anime" aria-pressed="true">Animé <b></b></button>
+      <button type="button" data-onglet="lecture" aria-pressed="false">Lecture <b></b></button>
+      <button type="button" data-onglet="film" aria-pressed="false">Film <b></b></button>
       <button type="button" data-onglet="stats" aria-pressed="false">Statistiques</button>
     </nav>
     <div class="actions">
@@ -51,12 +53,15 @@
         </div>
       </div>
       <div class="pastilles" id="pastilles" role="group" aria-label="Filtrer par statut"></div>
-      <div class="filtres">
-        <select id="f-tag" aria-label="Étiquette"></select>
-        <select id="f-periode" aria-label="Période"></select>
-        <select id="f-genre" aria-label="Genre"></select>
-        <button type="button" id="f-reset" class="discret">Réinitialiser</button>
-      </div>
+      <details class="plus-filtres" id="plus-filtres">
+        <summary>Plus de filtres (année, étiquette, genre)</summary>
+        <div class="filtres">
+          <select id="f-tag" aria-label="Étiquette"></select>
+          <select id="f-periode" aria-label="Année du premier visionnage"></select>
+          <select id="f-genre" aria-label="Genre"></select>
+          <button type="button" id="f-reset" class="discret">Réinitialiser</button>
+        </div>
+      </details>
       <p id="compteur" class="compteur" aria-live="polite"></p>
       <div id="liste" class="grille"></div>
     </section>
@@ -92,13 +97,23 @@
       <h2 id="titre-ajout">Ajouter un animé</h2>
       <form id="form-recherche" class="rangee">
         <input type="search" id="ajout-q" placeholder="Titre à chercher (romaji, anglais…)" aria-label="Titre à chercher" autocomplete="off" required>
+        <button type="submit" class="primaire">Chercher</button>
+      </form>
+      <div class="rangee">
+        <select id="ajout-cat" aria-label="Catégorie">
+          <option value="serie">Animé</option>
+          <option value="film">Film d'animation</option>
+          <option value="manga">Manga</option>
+          <option value="manhwa">Manhwa</option>
+          <option value="livre">Livre</option>
+          <option value="cinema">Film</option>
+        </select>
         <select id="ajout-statut" aria-label="Statut de départ">
           <option value="a_voir">À voir</option>
           <option value="en_cours">En cours</option>
           <option value="vu">Vu</option>
         </select>
-        <button type="submit" class="primaire">Chercher</button>
-      </form>
+      </div>
       <div id="ajout-resultats" class="resultats" aria-live="polite"></div>
       <div class="rangee">
         <button type="button" id="ajout-manuel" class="discret">Ajouter sans fiche (saisie manuelle)</button>

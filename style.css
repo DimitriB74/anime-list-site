@@ -88,6 +88,10 @@ button.icone { padding: 8px 11px; }
 .onglets { display: flex; gap: 4px; margin-left: 8px; }
 .onglets button { border: 0; background: transparent; color: var(--muted); font-weight: 600; }
 .onglets button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); }
+.onglets button { white-space: nowrap; }
+.onglets b { font-weight: 600; font-size: .8em; color: var(--muted); margin-left: 3px; }
+.onglets b:empty { display: none; }
+.annee-vue { font-size: .78rem; font-weight: 600; color: var(--accent); }
 .actions { margin-left: auto; display: flex; gap: 8px; }
 
 main { max-width: 1400px; margin: 0 auto; padding: 16px; }
@@ -109,6 +113,8 @@ main { max-width: 1400px; margin: 0 auto; padding: 16px; }
 .pastille[aria-pressed="true"] { background: var(--accent); color: var(--accent-texte); border-color: var(--accent); }
 .pastille[aria-pressed="true"] b { color: inherit; opacity: .8; }
 
+.plus-filtres > summary { cursor: pointer; color: var(--muted); font-size: .9rem; padding: 6px 0; }
+.plus-filtres[open] > summary { margin-bottom: 6px; }
 .filtres { display: flex; gap: 8px; flex-wrap: wrap; }
 .filtres select { max-width: 100%; }
 .compteur { color: var(--muted); margin: 14px 0 10px; font-size: .9rem; }
@@ -246,7 +252,8 @@ label input, label select, label textarea { color: var(--text); font-size: .95re
 
 @media (max-width: 640px) {
   .entete { flex-wrap: wrap; gap: 8px; }
-  .onglets { margin-left: 0; order: 3; width: 100%; }
+  .onglets { margin-left: 0; order: 3; width: 100%; overflow-x: auto; }
+  .onglets button { white-space: nowrap; flex: none; padding: 8px 9px; font-size: .9rem; }
   .grille { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px; }
   .fiche { grid-template-columns: 1fr; }
   .fiche .affiche { max-width: 170px; }

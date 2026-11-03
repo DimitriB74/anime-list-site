@@ -4,7 +4,8 @@ import { FICHIER_JOURNAL } from './journal.js';
 
 const URL_ANILIST = 'https://graphql.anilist.co';
 const URL_GITHUB = 'https://api.github.com';
-const CHAMPS = `id title { romaji english native } format episodes seasonYear genres description(asHtml: false) coverImage { large }`;
+const CHAMPS = `id title { romaji english native } format episodes duration seasonYear genres description(asHtml: false) coverImage { large }`;
+const CHAMPS_MANGA = `id title { romaji english native } format chapters countryOfOrigin startDate { year } genres description(asHtml: false) coverImage { large }`;
 
 const stockage = {
   lire(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -39,23 +40,27 @@ const versMedia = (m) => ({
   id: m.id,
   titre: m.title.romaji || m.title.english || m.title.native,
   format: m.format,
-  episodes: m.episodes,
-  annee: m.seasonYear,
+  episodes: m.episodes ?? null,
+  duree: m.duration ?? null,
+  annee: m.seasonYear ?? m.startDate?.year ?? null,
   genres: m.genres || [],
   synopsis: nettoyerSynopsis(m.description),
   affiche: m.coverImage?.large || null,
 });
 
-export async function chercherAnilist(q, n = 6) {
+// genre : 'anime' (séries, films d'animation) ou 'manga' (mangas, manhwas, romans).
+export async function chercherAnilist(q, genre = 'anime', n = 6) {
   q = String(q).normalize('NFD').replace(/[̀-ͯ]/g, ''); // AniList ne trouve rien avec les accents
+  const manga = genre === 'manga';
   const data = await anilist(
-    `query ($q: String, $n: Int) { Page(perPage: $n) { media(search: $q, type: ANIME, isAdult: false, sort: SEARCH_MATCH) { ${CHAMPS} } } }`,
+    `query ($q: String, $n: Int) { Page(perPage: $n) { media(search: $q, type: ${manga ? 'MANGA' : 'ANIME'}, isAdult: false, sort: SEARCH_MATCH) { ${manga ? CHAMPS_MANGA : CHAMPS} } } }`,
     { q, n });
   return data.Page.media.map(versMedia);
 }
 
-export async function detailAnilist(id) {
-  const data = await anilist(`query ($id: Int) { Media(id: $id, type: ANIME) { ${CHAMPS} } }`, { id });
+export async function detailAnilist(id, genre = 'anime') {
+  const manga = genre === 'manga';
+  const data = await anilist(`query ($id: Int) { Media(id: $id, type: ${manga ? 'MANGA' : 'ANIME'}) { ${manga ? CHAMPS_MANGA : CHAMPS} } }`, { id });
   return versMedia(data.Media);
 }
 
