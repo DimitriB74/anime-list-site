@@ -20,6 +20,27 @@
     "commentaire": "...",
     "affiche": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx9756-QnUGwlwwnsuN.jpg"
    }
+  },
+  {
+   "id": "mw2frn55-kveoiq",
+   "le": "2026-11-04T18:14:21.161Z",
+   "op": "maj",
+   "cible": 707,
+   "corps": {
+    "titre": "Great pretender",
+    "type": "serie",
+    "statut": "abandonne",
+    "episodes_vus": 5,
+    "episodes_total": 24,
+    "duree": null,
+    "periode": "2021",
+    "visionnages": 1,
+    "tags": [
+     "À continuer"
+    ],
+    "commentaire": "",
+    "affiche": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx110349-59hhZ9CNHVdk.png"
+   }
   }
  ]
 }
