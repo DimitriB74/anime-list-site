@@ -41,6 +41,27 @@
     "commentaire": "",
     "affiche": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx110349-59hhZ9CNHVdk.png"
    }
+  },
+  {
+   "id": "mw2fs2sj-l0qxar",
+   "le": "2026-11-04T18:14:41.443Z",
+   "op": "maj",
+   "cible": 709,
+   "corps": {
+    "titre": "Log horizon",
+    "type": "serie",
+    "statut": "abandonne",
+    "episodes_vus": 3,
+    "episodes_total": 62,
+    "duree": null,
+    "periode": "2021",
+    "visionnages": 1,
+    "tags": [
+     "À continuer"
+    ],
+    "commentaire": "ressayer?",
+    "affiche": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx17265-RyErURYesjJt.jpg"
+   }
   }
  ]
 }
