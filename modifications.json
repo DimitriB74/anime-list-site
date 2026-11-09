@@ -62,6 +62,17 @@
     "commentaire": "ressayer?",
     "affiche": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx17265-RyErURYesjJt.jpg"
    }
+  },
+  {
+   "id": "mw931ahf-nsv4zg",
+   "le": "2026-11-09T09:52:19.539Z",
+   "op": "ajout",
+   "cid": 1794217939539,
+   "corps": {
+    "statut": "a_voir",
+    "titre": "shutter island",
+    "type": "cinema"
+   }
   }
  ]
 }
