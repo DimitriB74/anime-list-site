@@ -73,6 +73,25 @@
     "titre": "shutter island",
     "type": "cinema"
    }
+  },
+  {
+   "id": "mw93688j-e8saf5",
+   "le": "2026-11-09T09:56:09.907Z",
+   "op": "maj",
+   "cible": -1794217939539,
+   "corps": {
+    "titre": "shutter island",
+    "type": "cinema",
+    "statut": "a_voir",
+    "episodes_vus": null,
+    "episodes_total": null,
+    "duree": null,
+    "periode": null,
+    "visionnages": 1,
+    "tags": [],
+    "commentaire": "",
+    "affiche": "https://fr.web.img4.acsta.net/medias/nmedia/18/69/96/84/19151192.jpg"
+   }
   }
  ]
 }
