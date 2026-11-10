@@ -92,6 +92,26 @@
     "commentaire": "",
     "affiche": "https://fr.web.img4.acsta.net/medias/nmedia/18/69/96/84/19151192.jpg"
    }
+  },
+  {
+   "id": "mwb9fcrq-b1qojf",
+   "le": "2026-11-10T22:26:45.734Z",
+   "op": "maj",
+   "cible": 1128,
+   "corps": {
+    "titre": "Porco Rosso",
+    "type": "film",
+    "statut": "vu",
+    "episodes_vus": null,
+    "episodes_total": null,
+    "duree": 93,
+    "periode": null,
+    "visionnages": 1,
+    "tags": [],
+    "commentaire": "",
+    "affiche": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx416-oO8Tts2dQtuv.jpg",
+    "note": 5
+   }
   }
  ]
 }
